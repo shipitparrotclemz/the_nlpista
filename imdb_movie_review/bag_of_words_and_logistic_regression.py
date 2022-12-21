@@ -23,9 +23,6 @@ def get_memory_usage(message: str) -> None:
 
 
 if __name__ == "__main__":
-    # we load only 10000 out of 50000 rows, due to memory constraints
-    # training with bag of words vectorization is very expensive in memory
-    # we will cover techniques to reduce memory usage next time.
     rows: int = 50000
 
     df: pd.DataFrame = pd.read_csv("imdb_dataset.csv")[:rows]
@@ -194,6 +191,9 @@ if __name__ == "__main__":
     print(f"F1 Score: {f1_score(y_test, y_pred)}")
 
     """
-    memory usage at the end of script.: Total memory used by process: 537.95 MB
+    The metrics seem to point to the model doing well!
+    
+    Q: How do we improve this further?
+    
+    Lets explore this in the next one!
     """
-    get_memory_usage(message="memory usage at the end of script.")
