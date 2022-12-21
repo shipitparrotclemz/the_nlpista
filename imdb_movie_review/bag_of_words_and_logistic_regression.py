@@ -139,6 +139,8 @@ if __name__ == "__main__":
 
     Accuracy = (TP + TN) / (TP + TN + FP + FN)
     """
+    # Bag of Words + sklearn Logistic Regression
+    # Accuracy: 0.8908
     print(f"Accuracy: {model.score(X_test, y_test)}")
 
     """
@@ -181,12 +183,15 @@ if __name__ == "__main__":
 
     y_pred: np.ndarray = model.predict(X_test)
 
+    # Bag of Words + sklearn Logistic Regression
     # Precision: 0.8855021492770614
     print(f"Precision: {precision_score(y_test, y_pred)}")
 
+    # Bag of Words + sklearn Logistic Regression
     # Recall: 0.8995633187772926
     print(f"Recall: {recall_score(y_test, y_pred)}")
 
+    # Bag of Words + sklearn Logistic Regression
     # F1 Score: 0.8924773532886965
     print(f"F1 Score: {f1_score(y_test, y_pred)}")
 
