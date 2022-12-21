@@ -2,32 +2,36 @@ import numpy as np
 import pandas as pd
 import scipy
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import psutil
+
+# Define process object globally, so we don't reinitialize this everytime we get the memory usage
+process = psutil.Process()
 
 
 def get_memory_usage(message: str) -> None:
     """
     Loading the data into memory, and the training process (fit) can take alot of memory.
     """
-    process = psutil.Process()
+    global process
     memory_info = process.memory_info()
-    print(message)
-    print(f"Total memory used by process: {memory_info.rss / 1024**2:.2f} MB")
+    print(
+        f"{message}: Total memory used by process: {memory_info.rss / 1024**2:.2f} MB"
+    )
 
 
 if __name__ == "__main__":
     # we load only 10000 out of 50000 rows, due to memory constraints
     # training with bag of words vectorization is very expensive in memory
     # we will cover techniques to reduce memory usage next time.
-    rows: int = 10000
+    rows: int = 50000
 
     df: pd.DataFrame = pd.read_csv("imdb_dataset.csv")[:rows]
 
     """
-    memory usage after loading 10000 rows of data into memory
-    Total memory used by process: 209.77 MB
+    memory usage after loading 50000 rows of data into memory: Total memory used by process: 217.81 MB
     """
     get_memory_usage(
         message=f"memory usage after loading {rows} rows of data into memory"
@@ -47,8 +51,7 @@ if __name__ == "__main__":
     bag_of_words_X: scipy.sparse._csr.csr_matrix = cv.fit_transform(X)
 
     """
-    memory usage after vectorizing 10000 rows of data with bag of words
-    Total memory used by process: 260.53 MB
+    memory usage after vectorizing 50000 rows of data with bag of words: Total memory used by process: 409.50 MB
     """
     get_memory_usage(
         message=f"memory usage after vectorizing {rows} rows of data with bag of words"
@@ -56,7 +59,28 @@ if __name__ == "__main__":
 
     """
     PS: bag of words vectors can be huge and take up alot of memory:
-    y.shape: (10000,)
+    y.shape: (50000,)
+    
+    Tip: avoid converting X_train / X_test to a np array!
+    
+    The converted np array is dramatically larger in memory than the sparse matrix.
+    
+    MOST MEMORY EXPENSIVE OPERATION:
+    
+    For 10,000 rows...
+    
+    ```
+    memory usage after converting bag of words csr matrix to numpy array: Total memory used by process: 2435.41 MB
+    get_memory_usage(
+        message=f"memory usage after converting bag of words csr matrix to numpy array"
+    )
+    ```
+    
+    the csr_matrix representation is designed to efficiently store and manipulate sparse matrices, 
+    which have a large number of elements that are zero or otherwise absent. 
+    
+    When we convert a csr_matrix to an ndarray, the resulting array must store the full set of values, 
+    including the zero or absent elements, which can significantly increase the required memory.
     """
     print(f"bag_of_words_X.shape: {bag_of_words_X.shape}")
 
@@ -79,58 +103,33 @@ if __name__ == "__main__":
     Lets do that with sklearn's train_test_split
     """
 
-    X_train: np.ndarray
-    X_test: np.ndarray
+    X_train: scipy.sparse._csr.csr_matrix
+    X_test: scipy.sparse._csr.csr_matrix
     y_train: np.ndarray
     y_test: np.ndarray
-
-    """
-    memory usage before converting bag of words csr matrix to numpy array
-    Total memory used by process: 253.28 MB
-    """
-    get_memory_usage(
-        message=f"memory usage before converting bag of words csr matrix to numpy array"
-    )
-
-    bag_of_words_X_np: np.ndarray = bag_of_words_X.toarray()
-
-    """
-    MOST MEMORY EXPENSIVE OPERATION:
-    
-    memory usage after converting bag of words csr matrix to numpy array
-    Total memory used by process: 2435.41 MB
-    """
-    get_memory_usage(
-        message=f"memory usage after converting bag of words csr matrix to numpy array"
-    )
 
     y_np: np.ndarray = y.to_numpy()
 
     X_train, X_test, y_train, y_test = train_test_split(
-        bag_of_words_X_np, y_np, test_size=0.1, random_state=42
+        bag_of_words_X, y_np, test_size=0.1, random_state=42
     )
 
     """
-    memory usage after train test split
-    Total memory used by process: 3704.88 MB
+    memory usage after train test split: Total memory used by process: 398.56 MB
     """
     get_memory_usage(message=f"memory usage after train test split")
 
     """
     Lets use scikitlearn's LogisticRegression
-    """
-
-    """
-    memory usage before training
-    Total memory used by process: 3705.22 MB
+    
+    memory usage before training: Total memory used by process: 398.56 MB
     """
     get_memory_usage(message=f"memory usage before training")
-    model = LogisticRegression(max_iter=1000)
+    model = LogisticRegression(max_iter=10000)
     model.fit(X_train, y_train)
 
     """
-    memory usage after training
-    Total memory used by process: 3668.78 MB
+    memory usage after training: Total memory used by process: 490.64 MB
     """
     get_memory_usage(message=f"memory usage after training")
 
@@ -159,8 +158,42 @@ if __name__ == "__main__":
     number_of_positive_reviews: int = y_test == 1
     number_of_negative_reviews: int = y_test == 0
 
+    # total number of reviews in test: 5000
     print(f"total number of reviews in test: {len(y_test)}")
+
+    # number_of_positive_reviews in test : 2519
     print(f"number_of_positive_reviews in test : {np.sum(number_of_positive_reviews)}")
+
+    # number_of_negative_reviews in test: 2481
     print(f"number_of_negative_reviews in test: {np.sum(number_of_negative_reviews)}")
 
+    """
+    In this case, we do not have a significant imbalance of positive / negative classes in the test set
+    
+    Lets explore three other metrics, which are robust towards imbalance of positive / negative classes
+    
+    Precision
+    - TP / (TP + FP)
+    
+    Recall 
+    - TP / (TP + FN)
+    
+    F1 Score
+    - 2 * (Precision * Recall) / (Precision + Recall)
+    """
+
+    y_pred: np.ndarray = model.predict(X_test)
+
+    # Precision: 0.8855021492770614
+    print(f"Precision: {precision_score(y_test, y_pred)}")
+
+    # Recall: 0.8995633187772926
+    print(f"Recall: {recall_score(y_test, y_pred)}")
+
+    # F1 Score: 0.8924773532886965
+    print(f"F1 Score: {f1_score(y_test, y_pred)}")
+
+    """
+    memory usage at the end of script.: Total memory used by process: 537.95 MB
+    """
     get_memory_usage(message="memory usage at the end of script.")
