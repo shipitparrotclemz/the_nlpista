@@ -102,8 +102,7 @@ if __name__ == "__main__":
 
     # csr (50, 50) dot csr (50, 1) returns (50, 1) as expected
     # numpy (50, 50) dot numpy (50, 1) returns (50, 1) as expected
-    Z_csr_numpy: np.ndarray = X_numpy.dot(W_numpy)
-
+    Z_csr_numpy: np.ndarray = X_csr.dot(W_numpy)
     # Use the dot() function to perform matrix multiplication between the two numpy arrays
     Z_numpy_numpy: np.ndarray = timed_numpy_dot(X_numpy, W_numpy)
     # Use the dot() function to perform matrix multiplication between the numpy array and list
