@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import scipy
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 
 from our_model_implementations.logistic_regression_implementation import OurLogisticRegression
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     """
     get_memory_usage(message=f"memory usage before training")
     model = OurLogisticRegression(max_iter=20000)
-    # model = LogisticRegression(max_iter=10000)
+    model = LogisticRegression(max_iter=10000)
     model.fit(X_train, y_train)
 
     """
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     Question:
     - Why does scikitlearn's LogisticRegression converge its loss function faster than our implementation?
     """
-    print(f"Accuracy: {model.score(X_test, y_test)}")
+    print(f"Accuracy: {accuracy_score(X_test, y_test)}")
 
     """
     However, Accuracy can be misleading; 
