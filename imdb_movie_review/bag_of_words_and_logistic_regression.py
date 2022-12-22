@@ -210,6 +210,7 @@ if __name__ == "__main__":
     # Recall: 0.8868598650258039
     print(f"Recall: {recall_score(y_test, y_pred)}")
 
+
     # 10,000 iterations - Bag of Words + sklearn Logistic Regression
     # F1 Score: 0.8924773532886965
     # 10,000 iterations - Bag of Words + our own Logistic Regression
