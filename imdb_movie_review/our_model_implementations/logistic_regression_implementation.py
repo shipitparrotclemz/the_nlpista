@@ -53,11 +53,14 @@ class OurLogisticRegression:
 
         # X shape: (45000, 101895)
         print(f"X shape: {X.shape}")
+        # Y shape: (45000,)
+        print(f"Y shape: {y.shape}")
         # bias_column shape: (45000, 1)
         print(f"bias_column shape: {bias_column.shape}")
 
-        bias_with_X = hstack([bias_column, X])
+        bias_with_X: csr_matrix = hstack([bias_column, X])
 
+        # bias_with_X shape: (45000, 101896)
         print(f"bias_with_X shape: {bias_with_X.shape}")
 
         """
@@ -94,21 +97,18 @@ class OurLogisticRegression:
         print(f"bias_and_weight shape: {self.bias_and_weight.shape}")
 
         for i in range(self.max_iter):
-
-            get_memory_usage(f"At start of iteration {i}")
-
             # Make predictions using the current weights and bias
             # note; @ is a matrix multiplication operator in numpy
 
+            # bias_with_X.shape: (45000, 101896)
+            # self.bias_and_weight.shape: (101896,)
             p: np.ndarray = OurLogisticRegression.sigmoid(
                 bias_with_X @ self.bias_and_weight
             )
 
-            get_memory_usage(f"After getting probabilities at iteration {i}")
-
-            # p shape: (45000,)
-            # commented this as printing this shape during every training iteration is too much
-            # print(f"p shape: {p.shape}")
+            if i == 0:
+                # p shape: (45000,)
+                print(f"p shape: {p.shape}")
 
             """
             RuntimeWarning: divide by zero encountered in log y.T @ np.log(p) + (1 - y).T @ np.log(1 - p)
@@ -119,8 +119,6 @@ class OurLogisticRegression:
             """
             p = np.clip(p, 1e-10, 1 - 1e-10)
 
-            get_memory_usage(f"After clipping p at iteration {i}")
-
             # Calculate the cost function: cross entropy loss
             # this cost function represents the current model's performance on the training data as it trains
 
@@ -128,24 +126,40 @@ class OurLogisticRegression:
             scikit learn's logistic regression adds a l2 reg cost to penalize the model for having high coefficients on each bag of words feature
             this is the regularization term, which is the sum of the squares of the weights multiplied by the regularization parameter lambda            
             """
+
+            # l2_reg_cost shape derivation: (); scalar
+            # self.bias_and_weight[1:].shape = (101895,)
+            # self.bias_and_weight[1:] @ self.bias_and_weight[1:].shape is a scalar
             l2_reg_cost: np.ndarray = (
                 (self.lambda_ / (2 * n_samples))
                 * self.bias_and_weight[1:]
                 @ self.bias_and_weight[1:]
             )
 
-            get_memory_usage(f"After getting l2 regularization cost at iteration {i}")
+            if i == 0:
+                # l2_reg_cost shape: ()
+                print(f"l2_reg_cost shape: {l2_reg_cost.shape}")
 
-            # commented this as printing this shape during every training iteration is too much
-            # print(f"l2_reg_cost shape: {l2_reg_cost.shape}")
+            # First Term shape derivation: (); scalar
+            # First Term: y.T @ np.log(p)
+            # y.T shape: (1,45000)
+            # np.log(p).shape: (45000,)
+            # y.T @ np.log(p).shape: (), its a scalar
+            # (1 - y).T @ np.log(1 - p).shape: (), its a scalar
 
+            # Second Term shape derivation: (); scalar
+            # Second Term: (1 - y).T @ np.log(1 - p)
+            # (1 - y).T shape: (1,45000)
+            # np.log(1 - p).shape: (45000,)
+            # (1 - y).T @ np.log(1 - p).shape: (), its a scalar
+
+            # cost function here is a scalar
             cost_function: np.ndarray = (-1 / n_samples) * (
                 y.T @ np.log(p) + (1 - y).T @ np.log(1 - p)
             ) + l2_reg_cost
 
-            get_memory_usage(f"After getting cost function at iteration {i}")
-
-            # print(f"cost_function shape: {cost_function.shape}")
+            if i == 0:
+                print(f"cost_function shape: {cost_function.shape}")
 
             # For every 500 iterations, print the loss
             if i % 500 == 0:
@@ -154,26 +168,61 @@ class OurLogisticRegression:
                 )
 
             # calculate the gradients of the weights; it should be the derivative of the cost function w.r.t the weights
+            # l2_reg_gradient shape derivation: (101895,)
+            # self.bias_and_weight[1:].shape: (101895,)
             l2_reg_gradient: np.ndarray = (
                 self.lambda_ / n_samples
             ) * self.bias_and_weight[1:]
 
-            get_memory_usage(
-                f"After getting l2 regularization term in weights gradient at iteration {i}"
-            )
+            if i == 0:
+                # l2_reg_gradient: (101895,)
+                print(f"l2_reg_gradient: {l2_reg_gradient.shape}")
 
             # the first column is the bias, the rest are the weights
+            # bias_and_weight shape: (101896,)
+            # (p-y).shape: (45000,)
+            # bias_with_X[:,0].shape: (45000,)
+            # ((p-y) @ bias_with_X[:,0]).shape: (1,), scalar
             bias_gradient: np.ndarray = (1 / n_samples) * ((p - y) @ bias_with_X[:, 0])
 
-            get_memory_usage(f"After getting bias gradient at iteration {i}")
+            if i == 0:
+                # bias_gradient.shape: (1,)
+                print(f"bias_gradient.shape: {bias_gradient.shape}")
 
+            """
+            PS: bias_with_X is a sparse matrix.
+            
+            As of NumPy 1.7, np.dot is not aware of sparse matrices, 
+            therefore using it will result on unexpected results or errors.
+            The corresponding dense array should be obtained first instead:
+             
+            ```
+            np.dot(A.toarray(), v)
+            array([ 1, -3, -1], dtype=int64)
+            ```
+            
+            but then all the performance advantages would be lost.
+
+            So, we use the @ operator instead, which is aware of sparse matrices.
+            """
+
+            # weight_gradient shape derivation: (101895,)
+            # (p-y).shape: (45000,)
+            # bias_with_X[:,1:].shape: (45000, 101895)
+            # l2_reg_gradient.shape: (101895,)
             weight_gradient: np.ndarray = (1 / n_samples) * (
                 (p - y) @ bias_with_X[:, 1:]
             ) + l2_reg_gradient
 
-            get_memory_usage(f"After getting weights gradient at iteration {i}")
+            if i == 0:
+                # weight_gradient.shape: (101895,)
+                print(f"weight_gradient.shape: {weight_gradient.shape}")
 
-            grad = np.concatenate([bias_gradient, weight_gradient], axis=1)
+            grad = np.concatenate([bias_gradient, weight_gradient])
+
+            if i == 0:
+                # grad.shape: (101896,)
+                print(f"grad.shape: {grad.shape}")
             # Update the weights and bias
             self.bias_and_weight -= self.learning_rate * grad
 
