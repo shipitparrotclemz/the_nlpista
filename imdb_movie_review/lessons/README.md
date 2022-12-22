@@ -58,3 +58,26 @@ We can see that for a matrix of zero numbers, the CSR matrix uses way less memor
 The size of the compressed sparse row matrix will stay the same, as long as the number of non-zero elements stay the same.
 
 In the meantime, the numpy array's size will scale quadratically with the rows / columns of the array.
+
+# Matrix Multiplication between scipy.sparse.csr_matrix and numpy.ndarray
+
+UNDER CONSTRUCTION - `csr_matrix_multiplication.py`
+
+## BUG: numpy (50, 50) dot csr (50, 1), will unexpectedly return (50, 50), not (50, 1)
+
+Source: scipy documentation
+- https://docs.scipy.org/doc/scipy/reference/sparse.html#matrix-vector-product
+
+As of NumPy 1.7, np.dot is not aware of sparse matrices, therefore using it will result on unexpected results or errors. The corresponding dense array should be obtained first instead:
+
+```
+np.dot(A.toarray(), v)
+array([ 1, -3, -1], dtype=int64)
+```
+
+but then all the performance advantages would be lost.
+
+## Sources:
+
+Dot product between 1D numpy array and scipy sparse matrix
+- https://stackoverflow.com/questions/31040188/dot-product-between-1d-numpy-array-and-scipy-sparse-matrix 
