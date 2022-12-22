@@ -83,6 +83,15 @@ class OurLogisticRegression:
                 bias_with_X @ self.bias_and_weight
             )
 
+            """
+            RuntimeWarning: divide by zero encountered in log y.T @ np.log(p) + (1 - y).T @ np.log(1 - p)
+            
+            It is possible to encounter this intermittent error when p happens to be 0
+            
+            This clipping of p (probabilities of positive class from sigmoid) will ensure that the values of p are always within the range [1e-10, 1 - 1e-10], which will prevent the log() function from being called with zero or one arguments.
+            """
+            p = np.clip(p, 1e-10, 1 - 1e-10)
+
             # Calculate the cost function: cross entropy loss
             # this cost function represents the current model's performance on the training data as it trains
             loss: np.ndarray = (-1 / n_samples) * (
