@@ -135,11 +135,14 @@ if __name__ == "__main__":
     # Accuracy - 0.8748
     # 20000 iterations - Bag of Words + our own Logistic Regression
     # Accuracy - 0.8738
+
+    y_pred: np.ndarray = model.predict(X_test)
+
     """
     Question:
     - Why does scikitlearn's LogisticRegression converge its loss function faster than our implementation?
     """
-    print(f"Accuracy: {accuracy_score(X_test, y_test)}")
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 
     """
     However, Accuracy can be misleading; 
@@ -178,8 +181,6 @@ if __name__ == "__main__":
     F1 Score
     - 2 * (Precision * Recall) / (Precision + Recall)
     """
-
-    y_pred: np.ndarray = model.predict(X_test)
 
     # 10,000 iterations - Bag of Words + sklearn Logistic Regression
     # Precision: 0.8855021492770614
