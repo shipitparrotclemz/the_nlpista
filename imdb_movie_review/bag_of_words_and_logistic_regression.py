@@ -4,25 +4,9 @@ import scipy
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-import psutil
 
-from logistic_regression_implementation import OurLogisticRegression
-
-# Define process object globally, so we don't reinitialize this everytime we get the memory usage
-process = psutil.Process()
-
-
-def get_memory_usage(message: str) -> None:
-    """
-    Loading the data into memory, and the training process (fit) can take alot of memory.
-    """
-    global process
-    memory_info = process.memory_info()
-    print(
-        f"{message}: Total memory used by process: {memory_info.rss / 1024**2:.2f} MB"
-    )
-
+from our_model_implementations.logistic_regression_implementation import OurLogisticRegression
+from utils.memory_utils import get_memory_usage
 
 if __name__ == "__main__":
     rows: int = 50000
@@ -148,6 +132,8 @@ if __name__ == "__main__":
     # Accuracy: 0.8618
     # 16000 iterations - Bag of Words + our own Logistic Regression
     # Accuracy - 0.8748
+    # 20000 iterations - Bag of Words + our own Logistic Regression
+    # Accuracy - 0.8738
     """
     Question:
     - Why does scikitlearn's LogisticRegression converge its loss function faster than our implementation?
@@ -200,6 +186,8 @@ if __name__ == "__main__":
     # Precision: 0.8542635658914729
     # 16000 iterations - Bag of Words + our own Logistic Regression
     # Precision: 0.8675728155339806
+    # 20000 iterations - Bag of Words + our own Logistic Regression
+    # Precision: 0.8630769230769231
     print(f"Precision: {precision_score(y_test, y_pred)}")
 
     # 10,000 iterations - Bag of Words + sklearn Logistic Regression
@@ -208,8 +196,9 @@ if __name__ == "__main__":
     # Recall: 0.8749503771337832
     # 16000 iterations - Bag of Words + our own Logistic Regression
     # Recall: 0.8868598650258039
+    # 20000 iterations - Bag of Words + our own Logistic Regression
+    # Recall: 0.8908296943231441
     print(f"Recall: {recall_score(y_test, y_pred)}")
-
 
     # 10,000 iterations - Bag of Words + sklearn Logistic Regression
     # F1 Score: 0.8924773532886965
@@ -217,6 +206,8 @@ if __name__ == "__main__":
     # F1 Score: 0.8644832320062756
     # 16000 iterations - Bag of Words + our own Logistic Regression
     # F1 Score: 0.8771103258735767
+    # 20000 iterations - Bag of Words + our own Logistic Regression
+    # F1 Score: 0.876733737058019
     print(f"F1 Score: {f1_score(y_test, y_pred)}")
 
     """
